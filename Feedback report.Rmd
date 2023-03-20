@@ -1,7 +1,8 @@
 ---
 title: "Candidate feedback report"
-output: pdf_document
-date: "2023-03-10"
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 # About this Report

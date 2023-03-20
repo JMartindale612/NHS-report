@@ -1,12 +1,22 @@
 library(kernlab)
 library(pacman)
 
+install.packages('tinytex')
+tinytex::install_tinytex()  # install TinyTeX
+
 install.packages(c(
   "gapminder", "ggforce", "gh", "globals", "openintro", "profvis",
   "RSQLite", "shiny", "shinycssloaders", "shinyFeedback",
   "shinythemes", "testthat", "thematic", "tidyverse", "vroom",
   "waiter", "xml2", "zeallot"
 ))
+
+install.packages(c("GISTools",
+                   "grid", "gridExtra", "httr", "knitr", "leaflet", "lubridate",
+                   "magrittr", "methods", "microbenchmark", "package", "pander",
+                   "plotly", "profvis", "pryr", "purrr", "rappdirs", "raster",
+                   "RColorBrewer", "readr", "rmarkdown", "sp", "stats", "stringr",
+                   "testthat", "tidyr", "tidyverse", "tigris", "titanic", "viridis"))
 
 # data("spam")
 
