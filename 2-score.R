@@ -1,90 +1,82 @@
-# 2 - Scoring
+
+# 2 - Clean ----
 
 source("1-extract.R")
 
-# Define function to calculate ability scores
-# Input: prefixes - a vector of column prefixes, suffix - a string suffix for the new column names
-# Output: a data frame with ability scores for each prefix
+## Ability ---
 
-score_test <- function(prefixes, suffix) {
-  # Initialize an empty list to store data frames
-  out <- list()
-  
-  # Loop through each prefix
-  for (prefix in prefixes) {
-    # Generate a new column name
-    column_name <- paste0(prefix, suffix)
-    
-    # Select the columns with the current prefix and pivot longer
-    # This creates a new "item" column and "score" column
-    # containing the item name and the score for each item
-    current_data <- data %>%
-      select(ID, contains(prefix)) %>%
-      pivot_longer(cols = contains(prefix), 
-                   names_to = "item", 
-                   values_to = "score")
-    
-    # Group the data by ID and calculate the mean score for each item
-    # The !! operator is used to evaluate the variable column_name as a string
-    # This creates a new column with the current prefix and the specified suffix
-    current_scores <- current_data %>%
-      group_by(ID, item) %>%
-      summarise(mean_score = mean(score, na.rm = TRUE)) %>%
-      ungroup() %>%
-      pivot_wider(names_from = item, values_from = mean_score, names_prefix = paste0(prefix, "_"))
-    
-    # Add the new scores to the list
-    out[[column_name]] <- current_scores
-  }
-  
-  # Reduce the list of data frames into a single data frame
-  result <- reduce(out, left_join, by = "ID")
-  
-  # Return the result
-  return(result)
+scores <- data %>%
+    # Calculate mean scores for each cognitive ability sub-test
+    mutate(
+      cog_num_mean = rowMeans(select(., starts_with("cog_num")), na.rm=TRUE),
+      cog_ver_mean = rowMeans(select(., starts_with("cog_ver")), na.rm=TRUE), 
+      cog_abs_mean = rowMeans(select(., starts_with("cog_abs")), na.rm=TRUE)) %>%
+    # Calculate overall score for cognitive ability
+    mutate(
+      cog_tot_mean = rowMeans(select(., contains("mean")), na.rm = TRUE)
+    ) %>%
+    mutate(
+      cog_num_zscore = ((cog_num_mean - mean(cog_num_mean)) / sd(cog_num_mean)),
+      cog_ver_zscore = ((cog_ver_mean - mean(cog_ver_mean)) / sd(cog_ver_mean)),
+      cog_abs_zscore = ((cog_abs_mean - mean(cog_abs_mean)) / sd(cog_abs_mean)),
+      cog_tot_zscore = ((cog_tot_mean - mean(cog_tot_mean)) / sd(cog_tot_mean))
+    ) %>%
+    mutate(
+      cog_num_percentile = pnorm(cog_num_zscore) * 100,
+      cog_ver_percentile = pnorm(cog_ver_zscore) * 100,
+      cog_abs_percentile = pnorm(cog_abs_zscore) * 100,
+      cog_tot_percentile = pnorm(cog_tot_zscore) * 100,
+      cog_num_sten = round(5.5 + 2 * cog_num_zscore),
+      cog_ver_sten = round(5.5 + 2 * cog_ver_zscore),
+      cog_abs_sten = round(5.5 + 2 * cog_abs_zscore),
+      cog_tot_sten = round(5.5 + 2 * cog_tot_zscore)
+    ) %>%
+    select(ID, cog_num_mean:cog_tot_sten) %>%
+    print(with = Inf)
+
+
+## Personality ----
+
+reverse_score_item <- function(x){ 
+  (6-x) 
 }
 
-# Define function to calculate percentile scores
-# Input: data - a data frame with z-score columns for a single participant
-# Output: a data frame with percentile scores for each z-score column
-calc_percentile_scores <- function(data) {
-  # Initialize an empty list to store percentile scores
-  out <- list()
-  
-  # Loop through each z-score column
-  for (col_name in colnames(data)) {
-    # Calculate the percentile score for the current z-score column
-    current_percentiles <- data %>%
-      summarise(percentile = round(ecdf(!!sym(col_name))(!!sym(col_name)) * 100, 2))
-    
-    # Add the new percentile scores to the list
-    out[[col_name]] <- current_percentiles
-  }
-  
-  # Reduce the list of data frames into a single data frame
-  result <- reduce(out, cbind)
-  
-  # Return the result
-  return(result)
-}
+# (High) Vulnerability for Narc Neuroticism
+s1data$dt_Vulner_s1_rev <- rev_score(s1data$dt_Vulner_s1) 
+# (Low) Indifference for Narc Neuroticism
+s1data$dt_Indiff_s1_rev <- rev_score(s1data$dt_Indiff_s1) 
+# (High) Deliberation for Mach Planfulness
+s1data$dt_Delib_s1_rev <- rev_score(s1data$dt_Delib_s1) 
 
-# Define function to plot ability scores for a single participant
-# Input: participant - a string specifying the participant ID, prefixes - a vector of column prefixes
-# Output: a ggplot2 bar chart of ability scores for the specified participant
-plot_ability_scores <- function(participant, prefixes) {
-  # Calculate the ability scores for the specified prefixes
-  scores <- score_test(prefixes, "_score")
-  
-  # Filter the scores for the specified participant
-  filtered_scores <- scores %>% filter(ID == participant)
-  
-  # Calculate the z-scores for the filtered scores
-  z_scores <- filtered_scores %>%
-    mutate(across(starts_with("cog_"), ~ (.-mean(.))/sd(., na.rm = TRUE))) %>%
-    select(starts_with("cog_"))
-  
-  # Calculate the percentile scores for the filtered scores
-  percentile_scores <- calc_percentile_scores(z_scores)
-}
-  # Combine the filtered scores and percentile
-  
+# fdt_achiev	fdt_activ	fdt_altr	fdt_anger	fdt_anxie	fdt_assert	
+# fdt_compet	fdt_compl	fdt_delib	fdt_depr	fdt_dutif	fdt_entit	
+# fdt_excite	fdt_fant	fdt_gregar	fdt_impul	fdt_indiff	
+# fdt_modest	fdt_order	fdt_self-ass	fdt_self-dis	fdt_shame	
+# fdt_straight	fdt_tender	fdt_trust	fdt_vulner	fdt_warm
+
+personality_vars <- tibble(
+  dt_psyTOTAL_4item_s356 = c("dt_Angry_s356",	"dt_Modest_s356", "dt_Tender_s356",
+                             "dt_Warmth_s356",	"dt_Dutif_s356",	"dt_Trust_s356",	
+                             "dt_Assert_s356",	"dt_SelfDisc_s356",	"dt_Vulner_s356",	
+                             "dt_Straight_s356",	"dt_Complianc_s356",	"dt_Delib_s356",	
+                             "dt_SelfAss_s356",	"dt_Altru_s356",	"dt_Depress_s356"	
+                             "dt_Excite_s356",	"dt_Anxiet_s356",	"dt_Impuls_s356"),
+  dt_narTOTAL_4item_s356 = c("dt_Achiev_s356", "dt_Modest_s356",	"dt_Assert_s356",
+                             "dt_Trust_s356",	"dt_Entit_s356",	"dt_Gregar_s356",
+                             "dt_Altru_s356",	"dt_Fantasy_s356",	"dt_Indiff_s356",
+                             "dt_Tender_s356",	"dt_Straight_s356",	"dt_Vulner_s356_rev",
+                             dt_Angry_s356	dt_Shame_s356	dt_Excite_s356),
+  dt_macTOTAL_4item_s356 = c(dt_Achiev_s356 dt_Activ_s356	dt_Altru_s356
+                             dt_Assert_s356	dt_Compet_s356	dt_Delib_s356_rev
+                             dt_Vulner_s356	dt_Modest_s356	dt_Order_s356
+                             dt_SelfAss_s356	dt_Straight_s356	dt_Tender_s356
+                             dt_Trust_s356
+  dt_narGRAND_4item_s356 = c(dt_Achiev_s356	dt_Modest_s356	dt_Assert_s356	dt_Entit_s356	dt_Gregar_s356	dt_Altru_s356	dt_Fantasy_s356	dt_Indiff_s356	dt_Tender_s356	dt_Straight_s356	dt_Excite_s356				
+  dt_narVULNER_4item_s356	dt_Trust_s356	dt_Vulner_s356_rev	dt_Angry_s356	dt_Shame_s356											
+)
+
+
+
+
+
+print(data, width = Inf)
