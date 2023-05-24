@@ -1,11 +1,11 @@
 # 3 - Visualise ----
 
-source("2-score.R")
+source("2-clean.R")
 
-data <- tibble(
-  dimension = c("ability_total", "ability_ver", "ability_num", "ability_log"),
-  score = c(54, 87, 23, 50)
-)
+test <- scores %>%
+  filter(ID == "participant1") %>%
+  pivot_longer(cols = -ID, names_to = c("test"), values_to = "score")
+
 
 data %>%
   ggplot(aes(x = dimension,
