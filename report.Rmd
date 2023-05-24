@@ -1,0 +1,12 @@
+---
+title: "report"
+output: html_document
+date: "2023-03-24"
+---
+
+```{r echo=FALSE}
+params$data %>%
+  ggplot(aes(x = question1, y = participant_ID)) +
+  geom_col() +
+  labs(title = "Participant Responses")
+```

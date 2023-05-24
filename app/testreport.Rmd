@@ -1,0 +1,16 @@
+---
+title: "testreport"
+author: "jk"
+date: "`r Sys.Date()`"
+output: html_document
+params:
+  rowid: 1
+---
+
+report for row `r params$rowid`.
+
+here is the data for `r params$rowid`:
+
+```{r echo=FALSE}
+thedata[params$rowid, ]
+```
