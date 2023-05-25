@@ -3,7 +3,41 @@
 
 source("1-extract.R")
 
-## Ability ---
+## Variables ----
+
+# Define personality scores
+personality_vars <- list(
+  psychopathy = c("fdt_anger", "fdt_modest", "fdt_tender",
+                  "fdt_warm", "fdt_dutif", "fdt_trust",
+                  "fdt_assert", "fdt_self-dis", "fdt_vulner",
+                  "fdt_straight", "fdt_compl", "fdt_delib",
+                  "fdt_self-ass", "fdt_altr", "fdt_depr",
+                  "fdt_excite", "fdt_anxie", "fdt_impul"),
+  narcissism = c("fdt_achiev", "fdt_modest", "fdt_assert",
+                 "fdt_trust", "fdt_entit", "fdt_gregar",
+                 "fdt_altr", "fdt_fant", "fdt_indiff",
+                 "fdt_tender", "fdt_straight", "fdt_vulner_rev",
+                 "fdt_anger", "fdt_shame", "fdt_excite"),
+  machiavelli = c("fdt_achiev", "fdt_activ", "fdt_altr",
+                 "fdt_assert", "fdt_compet", "fdt_delib_rev",
+                 "fdt_vulner", "fdt_modest", "fdt_order",
+                 "fdt_self-ass","fdt_straight",	"fdt_tender",
+                 "fdt_trust"),
+  grand_narc = c("fdt_achiev", "fdt_modest", "fdt_assert",	
+                 "fdt_entit", "fdt_gregar", "fdt_altr",
+                 "fdt_fant", "fdt_indiff", "fdt_tender",	
+                 "fdt_straight", "fdt_excite"),
+  vuln_narc = c("fdt_trust", "fdt_vulner_rev", "fdt_anger", "fdt_shame")										
+)
+
+data$fdt_vulner_rev <- 6 - data$fdt_vulner # (High) Vulnerability for Vulnerable Narcissism
+data$fdt_delib_rev <- 6 - data$fdt_delib # (High) Deliberation for Machiavellianism
+
+## Scoring ----
+
+# There is repetition in the below code to make it clearer for readers
+# and because the "mean() / sd()" calculations will be replaced with 
+# explicit numbers from the norm group
 
 scores <- data %>%
     # Calculate mean scores for each cognitive ability sub-test
@@ -31,52 +65,32 @@ scores <- data %>%
       cog_abs_sten = round(5.5 + 2 * cog_abs_zscore),
       cog_tot_sten = round(5.5 + 2 * cog_tot_zscore)
     ) %>%
-    select(ID, cog_num_mean:cog_tot_sten) %>%
+    mutate(
+      psych_mean = rowMeans(select(., all_of(personality_vars$psychopathy)), na.rm=TRUE),
+      narc_mean = rowMeans(select(., all_of(personality_vars$narcissism)), na.rm=TRUE),
+      mach_mean = rowMeans(select(., all_of(personality_vars$machiavelli)), na.rm=TRUE),
+      gnarc_mean = rowMeans(select(., all_of(personality_vars$vuln_narc)), na.rm=TRUE),
+      vnarc_mean = rowMeans(select(., all_of(personality_vars$grand_narc)), na.rm=TRUE)
+    ) %>%
+    mutate(
+      psych_zscore = ((psych_mean - mean(psych_mean)) / sd(psych_mean)),
+      narc_zscore = ((narc_mean - mean(narc_mean)) / sd(narc_mean)),
+      mach_zscore = ((mach_mean - mean(mach_mean)) / sd(mach_mean)),
+      gnarc_zscore = ((gnarc_mean - mean(gnarc_mean)) / sd(gnarc_mean)),
+      vnarc_zscore = ((vnarc_mean - mean(vnarc_mean)) / sd(vnarc_mean))
+    ) %>%
+    mutate(
+      psych_percentile = pnorm(psych_zscore) * 100,
+      narc_percentile = pnorm(narc_zscore) * 100,
+      mach_percentile = pnorm(mach_zscore) * 100,
+      gnarc_percentile = pnorm(gnarc_zscore) * 100,
+      vnarc_percentile = pnorm(vnarc_zscore) * 100,
+      psych_sten = round(5.5 + 2 * psych_zscore),
+      cog_sten = round(5.5 + 2 * narc_zscore),
+      cog_sten = round(5.5 + 2 * mach_zscore),
+      gnarc_sten = round(5.5 + 2 * gnarc_zscore),
+      vnarc_sten = round(5.5 + 2 * vnarc_zscore)
+    ) %>%
+    select(ID, cog_num_mean:vnarc_sten) %>%
     print(with = Inf)
 
-
-## Personality ----
-
-reverse_score_item <- function(x){ 
-  (6-x) 
-}
-
-# (High) Vulnerability for Narc Neuroticism
-s1data$dt_Vulner_s1_rev <- rev_score(s1data$dt_Vulner_s1) 
-# (Low) Indifference for Narc Neuroticism
-s1data$dt_Indiff_s1_rev <- rev_score(s1data$dt_Indiff_s1) 
-# (High) Deliberation for Mach Planfulness
-s1data$dt_Delib_s1_rev <- rev_score(s1data$dt_Delib_s1) 
-
-# fdt_achiev	fdt_activ	fdt_altr	fdt_anger	fdt_anxie	fdt_assert	
-# fdt_compet	fdt_compl	fdt_delib	fdt_depr	fdt_dutif	fdt_entit	
-# fdt_excite	fdt_fant	fdt_gregar	fdt_impul	fdt_indiff	
-# fdt_modest	fdt_order	fdt_self-ass	fdt_self-dis	fdt_shame	
-# fdt_straight	fdt_tender	fdt_trust	fdt_vulner	fdt_warm
-
-personality_vars <- tibble(
-  dt_psyTOTAL_4item_s356 = c("dt_Angry_s356",	"dt_Modest_s356", "dt_Tender_s356",
-                             "dt_Warmth_s356",	"dt_Dutif_s356",	"dt_Trust_s356",	
-                             "dt_Assert_s356",	"dt_SelfDisc_s356",	"dt_Vulner_s356",	
-                             "dt_Straight_s356",	"dt_Complianc_s356",	"dt_Delib_s356",	
-                             "dt_SelfAss_s356",	"dt_Altru_s356",	"dt_Depress_s356"	
-                             "dt_Excite_s356",	"dt_Anxiet_s356",	"dt_Impuls_s356"),
-  dt_narTOTAL_4item_s356 = c("dt_Achiev_s356", "dt_Modest_s356",	"dt_Assert_s356",
-                             "dt_Trust_s356",	"dt_Entit_s356",	"dt_Gregar_s356",
-                             "dt_Altru_s356",	"dt_Fantasy_s356",	"dt_Indiff_s356",
-                             "dt_Tender_s356",	"dt_Straight_s356",	"dt_Vulner_s356_rev",
-                             dt_Angry_s356	dt_Shame_s356	dt_Excite_s356),
-  dt_macTOTAL_4item_s356 = c(dt_Achiev_s356 dt_Activ_s356	dt_Altru_s356
-                             dt_Assert_s356	dt_Compet_s356	dt_Delib_s356_rev
-                             dt_Vulner_s356	dt_Modest_s356	dt_Order_s356
-                             dt_SelfAss_s356	dt_Straight_s356	dt_Tender_s356
-                             dt_Trust_s356
-  dt_narGRAND_4item_s356 = c(dt_Achiev_s356	dt_Modest_s356	dt_Assert_s356	dt_Entit_s356	dt_Gregar_s356	dt_Altru_s356	dt_Fantasy_s356	dt_Indiff_s356	dt_Tender_s356	dt_Straight_s356	dt_Excite_s356				
-  dt_narVULNER_4item_s356	dt_Trust_s356	dt_Vulner_s356_rev	dt_Angry_s356	dt_Shame_s356											
-)
-
-
-
-
-
-print(data, width = Inf)
