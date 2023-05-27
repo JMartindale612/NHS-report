@@ -1,12 +1,78 @@
 ---
 title: "report"
+author: "John Martindale"
 output: html_document
-date: "2023-03-24"
+date: "r Sys.Date()`"
+params:
+  rowid: "participant1"
 ---
 
-```{r echo=FALSE}
-params$data %>%
-  ggplot(aes(x = question1, y = participant_ID)) +
-  geom_col() +
-  labs(title = "Participant Responses")
+# Psychometric report
+
+What is Lorem Ipsum?
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+
+```{r}
+data <- read_csv("data/data_10.csv")
+
+
 ```
+
+
+
+```{r echo=FALSE, message=FALSE, warning =FALSE}
+source("2-score.R")
+
+data_plot <- scores10 %>%
+  filter(ID == "params$rowid") %>%
+  select(Psychopathy:`Vulnerable Narcissism`) %>%
+    pivot_longer(everything(), 
+                 names_to = c("test"), 
+                 values_to = "score") %>%
+  mutate(
+    test = factor(
+      test,
+      levels = c("Psychopathy", "Narcissism", "Machiavellianism", "Grandiose Narcissism", "Vulnerable Narcissism")
+    )
+  )
+```
+
+
+```{r}
+
+
+p <- ggplot(data_plot,
+            aes(
+              x = test,
+              y = score
+            ))
+
+p + 
+  # Bar and text values
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.5) +
+  geom_text(aes(label = round(score, 1)), 
+            hjust = 1.2, vjust = 0.3, 
+            color = "white") +
+  # Axes
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(
+    breaks = seq(0, 100, by = 10),
+    limits = c(0, 100),
+    expand = c(0, 0)) + 
+  # Labels
+  labs(x = "", y = "Percentile Score", title = "Psychometric Score") +
+  theme_minimal() +
+  # Aesthetics
+  scale_fill_manual(values = c("Psychopathy" = "#003087",
+                               "Narcissism" = "#005EB8",
+                               "Machiavellianism" = "#99C7EB",
+                               "Grandiose Narcissism" = "#919EA8",
+                               "Vulnerable Narcissism" = "#DDE1E4"))
+
+data_plot
+```
+
+The individual has a Psychopathy score of `r data_plot$score[data_plot$test == "Psychopathy"]` which `r if(data_plot$score[data_plot$test == "Psychopathy"] < 50){"is below the mean"} else {"is above the mean"}`.
+
+The individual has a Narcissism score of `r data_plot$score[data_plot$test == "Narcissism"]` which `r if(data_plot$score[data_plot$test == "Narcissism"] < 50){"is below the mean"} else {"is above the mean"}`.

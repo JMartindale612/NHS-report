@@ -80,17 +80,53 @@ scores <- data %>%
       vnarc_zscore = ((vnarc_mean - mean(vnarc_mean)) / sd(vnarc_mean))
     ) %>%
     mutate(
-      psych_percentile = pnorm(psych_zscore) * 100,
-      narc_percentile = pnorm(narc_zscore) * 100,
-      mach_percentile = pnorm(mach_zscore) * 100,
-      gnarc_percentile = pnorm(gnarc_zscore) * 100,
-      vnarc_percentile = pnorm(vnarc_zscore) * 100,
+      psych_percentile = round(pnorm(psych_zscore) * 100),
+      narc_percentile = round(pnorm(narc_zscore) * 100),
+      mach_percentile = round(pnorm(mach_zscore) * 100),
+      gnarc_percentile = round(pnorm(gnarc_zscore) * 100),
+      vnarc_percentile = round(pnorm(vnarc_zscore) * 100),
       psych_sten = round(5.5 + 2 * psych_zscore),
-      cog_sten = round(5.5 + 2 * narc_zscore),
-      cog_sten = round(5.5 + 2 * mach_zscore),
+      narc_sten = round(5.5 + 2 * narc_zscore),
+      mach_sten = round(5.5 + 2 * mach_zscore),
       gnarc_sten = round(5.5 + 2 * gnarc_zscore),
       vnarc_sten = round(5.5 + 2 * vnarc_zscore)
     ) %>%
-    select(ID, cog_num_mean:vnarc_sten) %>%
-    print(with = Inf)
+    select(ID, cog_num_mean:vnarc_sten)
+
+## Descriptives ----
+
+vars <- scores %>% select(cog_num_mean:vnarc_sten) %>% names()
+
+descriptives <- tibble(
+  vars = vars,
+  mean = numeric(length(vars)),
+  sd = numeric(length(vars))
+)
+
+for (i in seq_along(vars)) {
+  descriptives$mean[i] <- round(mean(scores[[vars[i]]], na.rm=TRUE), digits = 2)
+  descriptives$sd[i] <- round(sd(scores[[vars[i]]], na.rm=TRUE), digits = 2)
+}
+
+## Data frame for reports
+
+scores10 <- scores[1:10,]
+
+scores10 <- scores10 %>%
+  rename(
+    Psychopathy = psych_percentile,
+    Narcissism = narc_percentile,
+    Machiavellianism = mach_percentile,
+    "Grandiose Narcissism" = gnarc_percentile,
+    "Vulnerable Narcissism" = vnarc_percentile
+  )
+
+
+### Looping
+
+# Keeping this code here in case it is needed in future
+# Once the facet variables are present it will be substantially more 
+# parsimonious than the above
+
+# Define the wrapper function
 
